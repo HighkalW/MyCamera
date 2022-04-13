@@ -14,24 +14,28 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import com.dicoding.picodiploma.mycamera.databinding.ActivityCameraBinding
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class CameraActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCameraBinding
+    private lateinit var cameraExecutor: ExecutorService
 
     private var cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private var imageCapture: ImageCapture? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = ActivityCameraBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        cameraExecutor = Executors.newSingleThreadExecutor()
+
         binding.captureImage.setOnClickListener { takePhoto() }
-        binding.switchCamera.setOnClickListener { startCamera() }
         binding.switchCamera.setOnClickListener {
             cameraSelector = if (cameraSelector.equals(CameraSelector.DEFAULT_BACK_CAMERA)) CameraSelector.DEFAULT_FRONT_CAMERA
             else CameraSelector.DEFAULT_BACK_CAMERA
-
             startCamera()
         }
     }
@@ -40,6 +44,11 @@ class CameraActivity : AppCompatActivity() {
         super.onResume()
         hideSystemUI()
         startCamera()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        cameraExecutor.shutdown()
     }
 
     private fun takePhoto() {
@@ -96,6 +105,7 @@ class CameraActivity : AppCompatActivity() {
                     preview,
                     imageCapture
                 )
+
             } catch (exc: Exception) {
                 Toast.makeText(
                     this@CameraActivity,
